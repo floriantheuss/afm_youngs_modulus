@@ -4,6 +4,8 @@ Get the radial Young's modulus and stress of a membrane from AFM poking data.
 Code to simulate the behavior of a circular suspended membrane when poked with an AFM tip.\
 Includes fitting Young's modulus and tension of the membrane to experimental data
 
+Run "afm_youngs_modulus_master.py".
+
 ## Requirements
 - only tested with python 3.12 (known not to work on python 3.9)
 - may need to update conda and/or anaconda
