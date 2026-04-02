@@ -166,18 +166,22 @@ class AFMForceMapData:
 		# find minimum in y_data marking beggining/end of contact of tip with sample
 		y_approach_min_idx = np.argmin(y_approach)
 		# only taking small set of approach data, hopefully this is the actually linear part
-		y_approach = y_approach[y_approach_min_idx+40:y_approach_min_idx+100]
-		x_approach = x_approach[y_approach_min_idx+40:y_approach_min_idx+100]
+		# y_approach = y_approach[y_approach_min_idx+40:y_approach_min_idx+100]
+		# x_approach = x_approach[y_approach_min_idx+40:y_approach_min_idx+100]
+		y_approach = y_approach[y_approach_min_idx:]
+		x_approach = x_approach[y_approach_min_idx:]
+		print(len(y_approach))
 
 		y_retract_min_idx = np.argmin(y_retract)
 		y_retract = y_retract[:y_retract_min_idx]
 		x_retract = x_retract[:y_retract_min_idx]
 		# this pretty much forces the retract data to not go further down that the approach data
 		# I don't know why this is a thing but it was a thing in the old code
-		# hopefully this i the most linear part?
+		# hopefully this is the most linear part?
 		temp_idx = max(np.argwhere(y_retract>min(y_approach)).flatten())
 		x_retract, y_retract = x_retract[:temp_idx], y_retract[:temp_idx]
-		x_retract, y_retract   = x_retract[-70:], y_retract[-70:]
+		# x_retract, y_retract   = x_retract[-70:], y_retract[-70:]
+		x_retract, y_retract   = x_retract[-100:], y_retract[-100:]
 
 		return x_approach, y_approach, x_retract, y_retract
     
@@ -208,13 +212,14 @@ class AFMForceMapData:
 
 				# fit line to retract data
 				fit_retract = Polynomial.fit(x_retract, y_retract, deg=1)
-				fit_retract = fit_retract.convert().coef
+				fit_retract = fit_retract.convert().coef	
 				self.retract_fit_data.append([x_retract,y_retract])
 				y_retract_fitvals = fit_retract[1]*x_retract + fit_retract[0]
 				self.retract_fit.append([x_retract, y_retract_fitvals])
-
+	
 				# use average between apprach and retract
 				slope_ave = (fit_approach[1]+fit_retract[1])/2
+	
 				compliance_array[x_ind[0], x_ind[1]] = (1/slope_ave - 1)/k_tip
 
 			else:

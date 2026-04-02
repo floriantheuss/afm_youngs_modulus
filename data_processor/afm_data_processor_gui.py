@@ -263,6 +263,7 @@ class DataProcessorGUI (QMainWindow):
 
             k_tip = float(self.kTiplineEdit.text())
             compliance_map = self.afmForceMapData.fit_map_compliance(x_index, approach_data, retract_data, k_tip=k_tip, fit_type='linear')
+            
             self.updateForcePlot()
             self.update_compliance_map_plot(compliance_map)
             if self.circle_center[0]==0 and self.circle_center[1]==0 and self.radius_point[0]==0 and self.radius_point[1]==0.1:

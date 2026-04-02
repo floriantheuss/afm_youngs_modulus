@@ -204,7 +204,7 @@ class ComplianceFitGUI (QMainWindow):
             # self.calcComplMapButton.setStyleSheet("QPushButton#calcComplMapButton {color: rgb(0, 255, 0);background-color:rgb(255, 255, 255);border: 2px solid rgb(0, 255, 0);border-radius: 5px}")
             self.update_radial_compliance_plot(simulation=np.array([[[np.nan],[np.nan]]]))
             
-            self.params['bending_rigidity']        = self.bending_rigidity
+            self.params['bending_rigidity'].value  = self.bending_rigidity
             self.params['tip_size'].value          = self.tip_size
             self.params['force'].value             = self.force
             self.params['tension'].value           = self.tension
