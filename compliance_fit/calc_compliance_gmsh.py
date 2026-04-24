@@ -1,6 +1,6 @@
 import gmsh
 import dolfinx
-from dolfinx.io import gmshio, XDMFFile
+from dolfinx.io import gmsh as dolfinx_gmsh, XDMFFile
 from dolfinx import fem, geometry
 from dolfinx.fem import petsc
 from mpi4py import MPI
@@ -72,7 +72,7 @@ class CalcCompliance:
         gmsh.model.mesh.generate(dim=2)
         # gmsh.finalize()
         # Convert Gmsh model to Dolfinx msh
-        msh, _, _ = gmshio.model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=2)
+        msh = dolfinx_gmsh.model_to_mesh(gmsh.model, MPI.COMM_WORLD, 0, gdim=2).mesh
 
         # Finalize Gmsh
         gmsh.finalize()
@@ -141,7 +141,7 @@ class CalcCompliance:
         L = p* w * dx
 
         sol = fem.Function(V) # need to define a new function on the function space
-        problem = petsc.LinearProblem(a, L, u=sol) 
+        problem = petsc.LinearProblem(a, L, u=sol, petsc_options_prefix="membrane_")
         problem.solve()
 
         # solution is defined on the function space V (which is square of the mesh because we are solving two equations)
