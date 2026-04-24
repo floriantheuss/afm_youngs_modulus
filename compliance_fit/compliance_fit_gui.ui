@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>820</width>
-    <height>737</height>
+    <width>812</width>
+    <height>761</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -520,7 +520,7 @@ Simulation</string>
       <x>730</x>
       <y>520</y>
       <width>61</width>
-      <height>151</height>
+      <height>181</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -676,7 +676,7 @@ Mesh</string>
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>617</y>
+      <y>647</y>
       <width>691</width>
       <height>51</height>
      </rect>
@@ -834,7 +834,7 @@ border-radius: 0px</string>
       <x>20</x>
       <y>519</y>
       <width>691</width>
-      <height>91</height>
+      <height>121</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -983,6 +983,120 @@ border-radius: 0px</string>
       <string>Bending Rigidity (N*pm)</string>
      </property>
     </widget>
+    <widget class="QLabel" name="label_youngs_modulus">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>80</y>
+       <width>145</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
+     </property>
+     <property name="text">
+      <string>Young's Modulus (GPa)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="youngsModulusEdit">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>80</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
+     </property>
+     <property name="text">
+      <string>994.6</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_thickness">
+     <property name="geometry">
+      <rect>
+       <x>235</x>
+       <y>80</y>
+       <width>91</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
+     </property>
+     <property name="text">
+      <string>Thickness (nm)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="thicknessEdit">
+     <property name="geometry">
+      <rect>
+       <x>340</x>
+       <y>80</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
+     </property>
+     <property name="text">
+      <string>15</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_poisson">
+     <property name="geometry">
+      <rect>
+       <x>440</x>
+       <y>80</y>
+       <width>91</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
+     </property>
+     <property name="text">
+      <string>Poisson Ratio</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="poissonRatioEdit">
+     <property name="geometry">
+      <rect>
+       <x>550</x>
+       <y>80</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
+     </property>
+     <property name="text">
+      <string>0.26</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -990,8 +1104,8 @@ border-radius: 0px</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>820</width>
-     <height>24</height>
+     <width>812</width>
+     <height>30</height>
     </rect>
    </property>
   </widget>

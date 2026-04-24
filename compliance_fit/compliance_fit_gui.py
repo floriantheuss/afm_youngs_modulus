@@ -112,11 +112,20 @@ class ComplianceFitGUI (QMainWindow):
         self.meshLengthEdit.textEdited.connect(self.mesh_variables_changed)
 
         self.expRadiusEdit.textEdited.connect(self.params_variables_changed)
-        self.bendingRigidityEdit.textEdited.connect(self.params_variables_changed)
+        self.bendingRigidityEdit.textEdited.connect(self.on_bending_rigidity_edited)
         self.tensionEdit.textEdited.connect(self.params_variables_changed)
         self.tipSizeEdit.textEdited.connect(self.params_variables_changed)
         self.forceEdit.textEdited.connect(self.params_variables_changed)
         self.edgeSpringConstEdit.textEdited.connect(self.params_variables_changed)
+        self.youngsModulusEdit.textEdited.connect(self.on_youngs_modulus_edited)
+        self.thicknessEdit.textEdited.connect(self.on_thickness_or_poisson_edited)
+        self.poissonRatioEdit.textEdited.connect(self.on_thickness_or_poisson_edited)
+
+        E_GPa = self._compute_youngs_modulus()
+        if E_GPa is not None:
+            self.youngsModulusEdit.blockSignals(True)
+            self.youngsModulusEdit.setText(str(round(E_GPa, 4)))
+            self.youngsModulusEdit.blockSignals(False)
 
     def create_radial_compliance_plot(self):
         self.radialCompliancePlot.showAxis('top', show=True)
@@ -156,6 +165,50 @@ class ComplianceFitGUI (QMainWindow):
         # self.calcComplMapButton.setStyleSheet("QPushButton#calcComplMapButton {color: rgb(255, 0, 0);background-color:rgb(255, 255, 255);border: 2px solid rgb(255, 0, 0);border-radius: 5px}")
         self.calcComplMapButton.setEnabled(False)
     
+    def _compute_youngs_modulus(self):
+        try:
+            D_N_um = float(self.bendingRigidityEdit.text()) / 1e6
+            t_um   = float(self.thicknessEdit.text()) / 1e3
+            nu     = float(self.poissonRatioEdit.text())
+            E_N_um2 = 12 * D_N_um * (1 - nu**2) / t_um**3
+            return E_N_um2 * 1000  # GPa
+        except (ValueError, ZeroDivisionError):
+            return None
+
+    def _compute_bending_rigidity(self):
+        try:
+            E_N_um2 = float(self.youngsModulusEdit.text()) / 1000
+            t_um    = float(self.thicknessEdit.text()) / 1e3
+            nu      = float(self.poissonRatioEdit.text())
+            D_N_um  = E_N_um2 * t_um**3 / (12 * (1 - nu**2))
+            return D_N_um * 1e6  # display units (N*pm)
+        except (ValueError, ZeroDivisionError):
+            return None
+
+    def on_bending_rigidity_edited(self):
+        self.params_variables_changed()
+        E_GPa = self._compute_youngs_modulus()
+        if E_GPa is not None:
+            self.youngsModulusEdit.blockSignals(True)
+            self.youngsModulusEdit.setText(str(round(E_GPa, 4)))
+            self.youngsModulusEdit.blockSignals(False)
+
+    def on_youngs_modulus_edited(self):
+        self.params_variables_changed()
+        D_display = self._compute_bending_rigidity()
+        if D_display is not None:
+            self.bendingRigidityEdit.blockSignals(True)
+            self.bendingRigidityEdit.setText(str(round(D_display, 5)))
+            self.bendingRigidityEdit.blockSignals(False)
+
+    def on_thickness_or_poisson_edited(self):
+        self.params_variables_changed()
+        E_GPa = self._compute_youngs_modulus()
+        if E_GPa is not None:
+            self.youngsModulusEdit.blockSignals(True)
+            self.youngsModulusEdit.setText(str(round(E_GPa, 4)))
+            self.youngsModulusEdit.blockSignals(False)
+
     def update_params (self):
         # all length units are in um
         # all other units are in SI units
@@ -179,10 +232,10 @@ class ComplianceFitGUI (QMainWindow):
         ################################################################################################################################################
         ################################################################################################################################################
         # need to edit this to get it to units of um
-        self.bending_rigidity = float(self.bendingRigidityEdit.text())/1e6 # N*um 
-        # self.youngs_modulus = float(self.youngsModulusEdit.text())/1e3 # N/umˆ2
+        self.bending_rigidity = float(self.bendingRigidityEdit.text())/1e6 # N*um
         self.tension = float(self.tensionEdit.text())/1e6 # N/um
-        # self.poisson_ratio = float(self.poissonRatioEdit.text())
+        self.thickness = float(self.thicknessEdit.text()) / 1e3  # nm → um
+        self.poisson_ratio = float(self.poissonRatioEdit.text())
         self.tip_size = float(self.tipSizeEdit.text())/1e3 # um
         self.force = float(self.forceEdit.text())
         self.edge_spring_const = float(self.edgeSpringConstEdit.text())*1e13
@@ -366,6 +419,9 @@ class ComplianceFitGUI (QMainWindow):
         self.update_radial_compliance_plot(simulation=self.radial_simulation)
 
         self.bendingRigidityEdit.setText(str(np.round(self.bending_rigidity*1e6,5)))
+        E_GPa = self._compute_youngs_modulus()
+        if E_GPa is not None:
+            self.youngsModulusEdit.setText(str(np.round(E_GPa, 4)))
         self.tipSizeEdit.setText(str(self.tip_size*1e3))
         self.forceEdit.setText(str(self.force))
         self.tensionEdit.setText(str(np.round(self.tension*1e6,5)))
