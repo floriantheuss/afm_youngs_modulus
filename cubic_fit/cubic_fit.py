@@ -12,7 +12,7 @@ class CubicFit:
 		self.R  = float(radius)
 		self.T  = float(tension)
 		self.nu = float(poisson)
-		self.c  = 1
+		self.c  = c
 
 	def force_func (self, x, Elin, Ecub, x_shift, y_shift):
 		# I will include a constant shift in both x and y;
