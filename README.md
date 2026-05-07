@@ -23,7 +23,8 @@ conda install -c conda-forge fenics-dolfinx=0.10.0 mpich mpi4py pyvista
 ### 2. Install remaining packages via pip
 
 ```bash
-pip install pyqt5==5.15.11 PyOpenGL==3.1.10 PyOpenGL_accelerate==3.1.10 pyqtgraph==0.14.0 gmsh==4.15.2 lmfit==1.3.4 pyvistaqt==0.11.4 pandas==3.0.2 opencv-python==4.13.0
+# pip install pyqt5==5.15.11 PyOpenGL==3.1.10 PyOpenGL_accelerate==3.1.10 pyqtgraph==0.14.0 gmsh==4.15.2 lmfit==1.3.4 pyvistaqt==0.11.4 pandas==3.0.2 opencv-python==4.13.0
+pip install pyqt5 PyOpenGL PyOpenGL_accelerate pyqtgraph gmsh lmfit pyvistaqt pandas opencv-python
 ```
 
 ### Full package version reference
