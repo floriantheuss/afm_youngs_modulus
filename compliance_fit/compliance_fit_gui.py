@@ -73,8 +73,10 @@ class ComplianceFitGUI (QMainWindow):
 
     def initialize_radial_fit_widgets_and_variables (self):
         self.loadDataButton.clicked.connect(self.load_data_button_clicked)
-        self.fit_data   = None
-        self.fit_output = None
+        self.fit_data      = None
+        self.averaged_data = None
+        self.raw_data      = None
+        self.fit_output    = None
         self.radial_simulation = None
         self.fileDialog = QFileDialog()
         self.directory  = ''
@@ -87,6 +89,10 @@ class ComplianceFitGUI (QMainWindow):
         # self.progressBarTimer.timeout.connect(self.update_progress_bar)
         self.fitDataButton.clicked.connect(self.fit_data_button_clicked)
         self.saveRadialSimButton.clicked.connect(self.save_radial_sim_button_clicked)
+
+        self.fitDataSourceCombo.addItem("Fit Data (averaged)")
+        self.fitDataSourceCombo.addItem("Raw Data")
+        self.fitDataSourceCombo.currentIndexChanged.connect(self.on_fit_data_source_changed)
             
         # the fit of the compliance to get Young's Modulus etc will be performed later using lmfit
         # lmfit uses lmfit.Parameters() to handle all possible fit parameters
@@ -342,17 +348,31 @@ class ComplianceFitGUI (QMainWindow):
             print('Error calculating compliance map ...')
             print(e)
 
+    def on_fit_data_source_changed(self):
+        idx = self.fitDataSourceCombo.currentIndex()
+        self.fit_data = self.raw_data if idx == 1 else self.averaged_data
+        if self.fit_data is not None:
+            self.update_radial_compliance_plot(data=self.fit_data)
+
     def load_data_button_clicked (self):
         try:
             options = QFileDialog.Options()
             filename, _ = self.fileDialog.getOpenFileName(self, "Open Fit Data",self.directory,"All Files (*)", options=options)
             self.directory = self.separator.join(filename.split(self.separator)[:-1])
-            # self.fit_data = np.loadtxt(filename, delimiter=',')
             data = np.load(filename)
-            self.fit_data = data['radial compliance fit data (r/r0 and m/N)']
+            raw = data['radial compliance data (r/r0 and m/N)']
+            self.raw_data = raw[:, raw[0] < 1]
+            if 'radial compliance fit data (r/r0 and m/N)' in data:
+                avg = data['radial compliance fit data (r/r0 and m/N)']
+                self.averaged_data = avg[:, avg[0] < 1]
+                self.fitDataSourceCombo.model().item(0).setEnabled(True)
+            else:
+                self.averaged_data = None
+                self.fitDataSourceCombo.model().item(0).setEnabled(False)
+                self.fitDataSourceCombo.setCurrentIndex(1)
             self.expRadiusEdit.setText(str(np.round(data['radius (um)'],3)))
             self.update_params()
-            self.update_radial_compliance_plot(data=self.fit_data)
+            self.on_fit_data_source_changed()
         except Exception as e:
             print('Error loading fit data ...')
             print(e)

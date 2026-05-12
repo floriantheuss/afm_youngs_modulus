@@ -399,7 +399,7 @@ compliance</string>
         <x>580</x>
         <y>190</y>
         <width>125</width>
-        <height>111</height>
+        <height>141</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -470,6 +470,22 @@ border-radius: 0px</string>
        </property>
        <property name="text">
         <string>Fit Data</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="fitDataSourceCombo">
+       <property name="geometry">
+        <rect>
+         <x>14</x>
+         <y>110</y>
+         <width>97</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);
+border: 0px solid rgb(0, 255, 0);
+border-radius: 0px</string>
        </property>
       </widget>
      </widget>
