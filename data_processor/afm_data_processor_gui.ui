@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>973</width>
-    <height>712</height>
+    <height>740</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -468,6 +468,88 @@ background-color: rgb(255, 255, 255);</string>
          <string>Smooth Data</string>
         </property>
        </widget>
+       <widget class="QLabel" name="smoothThresholdLabel">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>593</y>
+          <width>65</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);</string>
+        </property>
+        <property name="text">
+         <string>threshold</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="smoothThresholdLineEdit">
+        <property name="geometry">
+         <rect>
+          <x>97</x>
+          <y>590</y>
+          <width>40</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>6</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="smoothSigmaLabel">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>593</y>
+          <width>150</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);</string>
+        </property>
+        <property name="text">
+         <string>sigma (Gaussian only)</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="smoothSigmaLineEdit">
+        <property name="geometry">
+         <rect>
+          <x>303</x>
+          <y>590</y>
+          <width>40</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>1.0</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="smoothMethodComboBox">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>560</y>
+          <width>130</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+        </property>
+       </widget>
        <widget class="QLabel" name="label_7">
         <property name="geometry">
          <rect>
@@ -536,7 +618,7 @@ background-color: rgb(0, 0, 0);</string>
          <string># points for fit data</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="createRadCompFitDataButton">
+       <widget class="QPushButton" name="createRadCompAveDataButton">
         <property name="geometry">
          <rect>
           <x>510</x>
@@ -550,10 +632,10 @@ background-color: rgb(0, 0, 0);</string>
 background-color: rgb(255, 255, 255);</string>
         </property>
         <property name="text">
-         <string>Create Rad. Comp. Fit Data</string>
+         <string>Create Rad. Comp. Ave. Data</string>
         </property>
        </widget>
-       <widget class="QLineEdit" name="numPointsFitDatalineEdit">
+       <widget class="QLineEdit" name="numPointsAveDatalineEdit">
         <property name="geometry">
          <rect>
           <x>830</x>
@@ -585,6 +667,88 @@ background-color: rgb(255, 255, 255);</string>
         </property>
         <property name="text">
          <string>Project Radial Compliance</string>
+        </property>
+       </widget>
+       <widget class="QComboBox" name="aveMethodComboBox">
+        <property name="geometry">
+         <rect>
+          <x>865</x>
+          <y>530</y>
+          <width>100</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="zeroComplBoundsLabel">
+        <property name="geometry">
+         <rect>
+          <x>615</x>
+          <y>563</y>
+          <width>130</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);</string>
+        </property>
+        <property name="text">
+         <string>zero compl. bounds</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="zeroComplMinLineEdit">
+        <property name="geometry">
+         <rect>
+          <x>750</x>
+          <y>560</y>
+          <width>40</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>1.1</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="zeroComplBoundsSepLabel">
+        <property name="geometry">
+         <rect>
+          <x>794</x>
+          <y>563</y>
+          <width>10</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 0, 0);</string>
+        </property>
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="zeroComplMaxLineEdit">
+        <property name="geometry">
+         <rect>
+          <x>808</x>
+          <y>560</y>
+          <width>40</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>1.2</string>
         </property>
        </widget>
        <widget class="PlotWidget" name="complianceRadialPlot">

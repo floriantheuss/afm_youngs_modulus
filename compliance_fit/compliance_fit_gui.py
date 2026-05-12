@@ -362,8 +362,8 @@ class ComplianceFitGUI (QMainWindow):
             data = np.load(filename)
             raw = data['radial compliance data (r/r0 and m/N)']
             self.raw_data = raw[:, raw[0] < 1]
-            if 'radial compliance fit data (r/r0 and m/N)' in data:
-                avg = data['radial compliance fit data (r/r0 and m/N)']
+            if 'radial compliance ave data (r/r0 and m/N)' in data:
+                avg = data['radial compliance ave data (r/r0 and m/N)']
                 self.averaged_data = avg[:, avg[0] < 1]
                 self.fitDataSourceCombo.model().item(0).setEnabled(True)
             else:

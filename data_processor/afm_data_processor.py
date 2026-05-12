@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.interpolate import RegularGridInterpolator, interp2d, RectBivariateSpline
+from scipy.ndimage import gaussian_filter
 import math
 import numpy as np
 import os
@@ -239,6 +240,7 @@ class AFMForceMapData:
 		# this is only done because it's what was done previously
 		# a decent Gaussian average should be much more motivated and better
 		# OR even better would be to use raw data until the very end (e.g. to get radial compliance data) and then only average/smooth that final data
+		compliance_array = compliance_array.copy()
 		for ii, row in enumerate(compliance_array):
 			for jj, element in enumerate(row):
 				if (np.abs(element)>threshold_compliance) or (element==0):
@@ -254,7 +256,33 @@ class AFMForceMapData:
 		self.processed_compliance_array = compliance_array
 		return self.processed_compliance_array
 
-	
+	def smooth_compliance_gaussian (self, compliance_array, threshold_compliance=6, sigma=1.0):
+		"""
+		smooth 2D compliance map with a NaN-aware Gaussian filter;
+		pixels that are zero or exceed threshold_compliance are treated as missing: the Gaussian
+		is renormalised around them so they don't bleed into or suppress neighbouring values
+		- sigma: standard deviation of the Gaussian kernel in pixels
+		"""
+		arr = compliance_array.astype(float).copy()
+		outlier_mask = (np.abs(arr) > threshold_compliance) | (arr == 0)
+		arr[outlier_mask] = np.nan
+
+		# NaN-aware Gaussian: filter data and a binary weight mask separately, then divide;
+		# this renormalises the kernel around missing pixels instead of pulling values toward zero
+		nan_mask   = np.isnan(arr)
+		arr_filled = np.where(nan_mask, 0.0, arr)
+		weights    = np.where(nan_mask, 0.0, 1.0)
+
+		filtered_data   = gaussian_filter(arr_filled, sigma=sigma)
+		filtered_weight = gaussian_filter(weights,    sigma=sigma)
+
+		with np.errstate(invalid='ignore'):
+			result = np.where(filtered_weight > 0, filtered_data / filtered_weight, 0.0)
+
+		self.processed_compliance_array = result
+		return self.processed_compliance_array
+
+
 	def find_circle (self, compliance_array):
 		"""
 		uses open-cv to find the center of a circle - helpful if suspended membrane is circular drumhead;
@@ -314,7 +342,7 @@ class AFMForceMapData:
 		return meaner_xf, meaner_yf
 			
 
-	def create_radial_plot_data (self, compliance_array, circle_center, scan_window_size, radius, zero_compl=0):
+	def create_radial_data (self, compliance_array, circle_center, scan_window_size, radius, zero_compl=0):
 		"""
 		project 2D compliance map onto 1D data as a function of distance from the circle center rather than absolute pixel position;
 		no averaging happens here: every pixel is just assigned a distance from circle center based on pixel position
@@ -331,7 +359,11 @@ class AFMForceMapData:
 		x_shifted, y_shifted = x-scan[circle_center[0]], y-scan[circle_center[1]]
 		distance = np.sqrt(x_shifted**2 + y_shifted**2) # distance of every pixel from the circle center
 		distance   = distance.flatten()
-		compliance = compliance_array.flatten()-zero_compl
+		
+		compliance = compliance_array.flatten()
+		if zero_compl is None:
+			zero_compl = np.mean(compliance[distance>1])
+		compliance = compliance-zero_compl
 		compliance, distance = compliance[np.argsort(distance)], distance[np.argsort(distance)]
 
 		# distance, compliance = np.zeros(int(np.shape(compliance_array)[0]**2)), np.zeros(int(np.shape(compliance_array)[1]**2))
@@ -348,12 +380,12 @@ class AFMForceMapData:
 		
 		return distance, compliance
 
-	def create_radial_fit_data (self, compliance_array, circle_center, radius, scan_window_size, r_divs=20, theta_divs=80, calib_boundary=1.2):
+	def create_radial_ave_data_polar (self, compliance_array, circle_center, radius, scan_window_size, r_divs=20, theta_divs=80, zero_compliance_bounds=[1.1, 1.2]):
 		"""
 		project 2D compliance map onto 1D data as a function of distance from the circle center rather than absolute pixel position;
 		this is done by changing coordinates from x-y to radial coordinates and then averaging over the angle and certain radius values;
 		I am not sure if this is the best way of doing things; I still feel like the best approach is to take raw (un-processed) compliance map and
-		create radial data with self.create_radial_plot_data and then take that data set and remove outliers and run averaging
+		create radial data with self.create_radial_data and then take that data set and remove outliers and run averaging
 		- compliance_array: 2D array of compliance map
 		- circle_center: center of the drumhead in pixels
 		- scan_window_size: range of the entire AFM map in um
@@ -365,34 +397,68 @@ class AFMForceMapData:
 		origin_x = scan_x[circle_center[0]]
 		origin_y = scan_y[circle_center[1]]
 
-		radial_profile = np.zeros([r_divs*theta_divs,2])
-		radial_avg     = np.zeros(r_divs)
+		# internally sample r_divs+1 points in [0, 1) so that after discarding r=0 (where a
+		# radial average is meaningless) exactly r_divs points are returned to the caller
+		n_calib            = 5  # extra points outside the membrane used only for baseline calibration
+		radial_dist_useful = np.linspace(0, 1, r_divs + 2)[:-1]  # r_divs+1 points, 0 <= r < 1
+		# calibration points sample the clamped substrate between zero_compliance_bounds;
+		# their average gives the baseline compliance that is subtracted from all measurements
+		radial_dist_calib  = np.linspace(zero_compliance_bounds[0], zero_compliance_bounds[1], n_calib)
+		radial_dist        = np.concatenate([radial_dist_useful, radial_dist_calib])
+		n_total            = len(radial_dist)
 
-		radial_dist    = np.linspace(0,calib_boundary,r_divs)
+		radial_profile = np.zeros([n_total * theta_divs, 2])
+		radial_avg     = np.zeros(n_total)
 
-		indices_radial = [k for (k,val) in enumerate(radial_dist) if val>1.1] #trying this 20230607
-		indices_useful = [k for (k,val) in enumerate(radial_dist) if val<1]
+		# calib points are the last n_calib entries of radial_dist by construction
+		indices_radial = list(range(len(radial_dist_useful), n_total))
+		indices_useful = list(range(r_divs + 1))  # first r_divs+1 entries are all < 1 by construction
 
 		ftemp = RectBivariateSpline(scan_x, scan_y, compliance_array.T)
 		f = lambda xnew, ynew: ftemp(xnew, ynew).T
-		# f = interp2d(scan_x,scan_y,compliance_array,kind='cubic')
 		counter, counter_r = 0, 0
 		for r in radial_dist:
-			for theta in np.linspace(0,1.9375*np.pi,theta_divs):
-			
-				xnew = origin_x+r*np.cos(theta)        #taking a line cut along the theta direction and defining the x value
-				ynew = origin_y+r*np.sin(theta)			#taking a linecut along the theta direction and defining the y value
+			for theta in np.linspace(0, 1.9375*np.pi, theta_divs):
+				xnew = origin_x + r*np.cos(theta)
+				ynew = origin_y + r*np.sin(theta)
 
-				radial_profile[counter,0]=r
-				radial_profile[counter,1:]=f(xnew,ynew)      #interpolate to get the radial profile 
+				radial_profile[counter, 0]  = r
+				radial_profile[counter, 1:] = f(xnew, ynew)
 
-				counter=counter+1
+				counter += 1
 
-			radial_avg[counter_r]=np.mean(radial_profile[counter-theta_divs:counter-1,1])
-			 #I use the average value at each radial linecut to fit the numerical results. radial_avg is the array that stores those average values
-			counter_r=counter_r+1
+			# average over all angles at this radius for the 1D radial profile
+			radial_avg[counter_r] = np.mean(radial_profile[counter - theta_divs:counter - 1, 1])
+			counter_r += 1
 
-		zero_compl=np.mean(radial_avg[indices_radial])
-		radial_avg=radial_avg-zero_compl*np.ones(r_divs)
-		radial_profile[:,1]=radial_profile[:,1]-zero_compl*np.ones(r_divs*theta_divs)
-		return radial_dist[indices_useful[1:]],radial_avg[indices_useful[1:]], zero_compl
+		zero_compl = np.mean(radial_avg[indices_radial])
+		radial_avg          -= zero_compl
+		radial_profile[:, 1] -= zero_compl
+		return radial_dist[indices_useful[1:]], radial_avg[indices_useful[1:]], zero_compl
+
+	def create_radial_ave_data_bin (self, distance, compliance, r_divs=20, zero_compliance_bounds=[1.1, 1.2]):
+		"""
+		simpler alternative to create_radial_ave_data_polar: takes the (distance, compliance) output of
+		create_radial_data and averages it into r_divs equal-width bins between 0 and 1;
+		the baseline compliance is estimated from points within zero_compliance_bounds and subtracted
+		- distance, compliance: 1D arrays as returned by create_radial_data
+		- r_divs: number of output bins
+		- zero_compliance_bounds: radial range [min, max] in the clamped substrate used for baseline
+		"""
+		mask_calib = (distance >= zero_compliance_bounds[0]) & (distance <= zero_compliance_bounds[1])
+		zero_compl = np.mean(compliance[mask_calib])
+		compliance = compliance - zero_compl
+
+		bin_edges   = np.linspace(0, 1, r_divs + 1)
+		bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+		bin_avg     = np.zeros(r_divs)
+		for i in range(r_divs):
+			mask = (distance >= bin_edges[i]) & (distance < bin_edges[i + 1])
+			if np.any(mask):
+				bin_avg[i] = np.mean(compliance[mask])
+
+		mask = bin_avg>0 # sometimes if you choose to many points,
+						 # some will be in places where there is no data so they average to zero;
+						 # this gets rid of these points
+
+		return bin_centers[mask], bin_avg[mask], zero_compl

@@ -69,7 +69,7 @@ class DataProcessorGUI (QMainWindow):
         self.afmForceMapData = AFMForceMapData()
         self.active_compliance_map = None
         self.active_radial_compliance_data = None
-        self.active_radial_compliance_fit_data = None
+        self.active_radial_compliance_ave_data = None
         self.radius = 0
         self.radius_um = np.nan
         self.scan_win_size = 0
@@ -188,15 +188,24 @@ class DataProcessorGUI (QMainWindow):
         self.fit_rad_comp_plot.setBrush(pg.mkBrush(color))
         self.complianceRadialPlot.addItem(self.fit_rad_comp_plot)
     
-    def initialize_compliance_map_widgets (self):    
+    def initialize_compliance_map_widgets (self):
         self.circle_center_plot.sigPositionChanged.connect(self.update_circle_params_center)
         self.radius_point_plot.sigPositionChanged.connect(self.update_circle_params_radius)
         self.smoothComplianceButton.clicked.connect(self.smooth_compliance_map_data)
+        self.smoothMethodComboBox.addItem("Nearest Neighbor")
+        self.smoothMethodComboBox.addItem("Gaussian")
+        self.smoothMethodComboBox.currentIndexChanged.connect(self.revert_to_raw_compliance)
+        self.smoothThresholdLineEdit.textChanged.connect(self.revert_to_raw_compliance)
+        self.smoothSigmaLineEdit.textChanged.connect(self.revert_to_raw_compliance)
         self.findCenterButton.clicked.connect(self.find_circle_center)
     
     def initialize_radial_compliance_widgets(self):
         self.projectRadialComplianceButton.clicked.connect(self.project_radial_compliance_button_clicked)
-        self.createRadCompFitDataButton.clicked.connect(self.create_rad_com_fit_data_button_clicked)
+        self.createRadCompAveDataButton.clicked.connect(self.create_rad_com_ave_data_button_clicked)
+        self.aveMethodComboBox.addItem("Polar")
+        self.aveMethodComboBox.addItem("Bin")
+        self.aveMethodComboBox.currentIndexChanged.connect(self.clear_radial_ave_data)
+        self.numPointsAveDatalineEdit.textChanged.connect(self.clear_radial_ave_data)
         # self.saveFitDataButton.clicked.connect(self.save_fit_data_button_clicked)
         # self.saveRadialDataButton.clicked.connect(self.save_radial_data_button_clicked)
         self.saveAllButton.clicked.connect(self.save_all_button_clicked)
@@ -273,8 +282,8 @@ class DataProcessorGUI (QMainWindow):
                 self.update_circle_params_radius()
             
             self.active_radial_compliance_data = None
-            self.active_radial_compliance_fit_data = None
-            self.update_radial_compliance_plot(self.active_radial_compliance_data,self.active_radial_compliance_fit_data)
+            self.active_radial_compliance_ave_data = None
+            self.update_radial_compliance_plot(self.active_radial_compliance_data,self.active_radial_compliance_ave_data)
             self.FitComplianceButton.setStyleSheet("QPushButton#FitComplianceButton {color: rgb(0, 255, 0);background-color:rgb(255, 255, 255);border: 2px solid rgb(0, 255, 0);border-radius: 5px}")
         
         except Exception as e:
@@ -328,11 +337,23 @@ class DataProcessorGUI (QMainWindow):
 
         self.circle.setRect(self.circle_center[0] - self.radius, self.circle_center[1] - self.radius, 2*self.radius, 2*self.radius)
     
+    def revert_to_raw_compliance (self):
+        if self.afmForceMapData.raw_compliance_array is None:
+            return
+        self.update_compliance_map_plot(self.afmForceMapData.raw_compliance_array)
+        self.active_radial_compliance_data     = None
+        self.active_radial_compliance_ave_data = None
+        self.update_radial_compliance_plot(None, None)
+
     def smooth_compliance_map_data (self):
         try:
-            self.afmForceMapData.post_process_compliance_array(self.afmForceMapData.raw_compliance_array, threshold_compliance=6)
+            threshold = float(self.smoothThresholdLineEdit.text())
+            if self.smoothMethodComboBox.currentIndex() == 0:  # Nearest Neighbor
+                self.afmForceMapData.post_process_compliance_array(self.afmForceMapData.raw_compliance_array, threshold_compliance=threshold)
+            else:  # Gaussian
+                sigma = float(self.smoothSigmaLineEdit.text())
+                self.afmForceMapData.smooth_compliance_gaussian(self.afmForceMapData.raw_compliance_array, threshold_compliance=threshold, sigma=sigma)
             self.update_compliance_map_plot(self.afmForceMapData.processed_compliance_array)
-        
         except Exception as e:
             print('Error creating processed compliance map ...')
             print(e)
@@ -359,29 +380,33 @@ class DataProcessorGUI (QMainWindow):
             num_pixels = np.shape(self.active_compliance_map)[0]
             scan_win_size = float(self.scanWinSizelineEdit.text())
             radius_um = self.radius * scan_win_size / num_pixels
-            distance, compliance = self.afmForceMapData.create_radial_plot_data(self.active_compliance_map, self.circle_center.astype('int'), scan_win_size, radius_um, zero_compl=0)
+            distance, compliance = self.afmForceMapData.create_radial_data(self.active_compliance_map, self.circle_center.astype('int'), scan_win_size, radius_um, zero_compl=None)
             self.active_radial_compliance_data = np.array([distance, compliance])
-            self.active_radial_compliance_fit_data = None
-            self.update_radial_compliance_plot(self.active_radial_compliance_data,self.active_radial_compliance_fit_data)
+            self.active_radial_compliance_ave_data = None
+            self.update_radial_compliance_plot(self.active_radial_compliance_data,self.active_radial_compliance_ave_data)
         except Exception as e:
             print('Error calculating radial compliance ...')
             print(e)
     
-    def update_radial_compliance_plot (self, radial_compliance_data=None, radial_compliance_fit_data=None):
+    def update_radial_compliance_plot (self, radial_compliance_data=None, radial_compliance_ave_data=None):
         try:
             if radial_compliance_data is not None:
                 self.rad_comp_plot.setData(radial_compliance_data[0], radial_compliance_data[1])
             else:
                 self.rad_comp_plot.setData([],[])
-            if radial_compliance_fit_data is not None:
-                self.fit_rad_comp_plot.setData(radial_compliance_fit_data[0], radial_compliance_fit_data[1])
+            if radial_compliance_ave_data is not None:
+                self.fit_rad_comp_plot.setData(radial_compliance_ave_data[0], radial_compliance_ave_data[1])
             else:
                 self.fit_rad_comp_plot.setData([],[])
         except Exception as e:
             print('Error updating radial compliance plot ...')
             print(e)
     
-    def create_rad_com_fit_data_button_clicked (self):
+    def clear_radial_ave_data (self):
+        self.active_radial_compliance_ave_data = None
+        self.update_radial_compliance_plot(self.active_radial_compliance_data, None)
+
+    def create_rad_com_ave_data_button_clicked (self):
         try:
             x, y = self.circle_center_plot.pos().x(), self.circle_center_plot.pos().y()
             self.circle_center_plot.setPos(int(x), int(y))
@@ -391,16 +416,22 @@ class DataProcessorGUI (QMainWindow):
             num_pixels = np.shape(self.active_compliance_map)[0]
             scan_win_size = float(self.scanWinSizelineEdit.text())
             radius_um = self.radius * scan_win_size / num_pixels
-            rdivs = int(self.numPointsFitDatalineEdit.text())
-            distance, compliance, zero_compliance = self.afmForceMapData.create_radial_fit_data (self.active_compliance_map, circle_center, radius_um, scan_win_size, r_divs=rdivs, theta_divs=80, calib_boundary=1.2)
-            self.active_radial_compliance_fit_data = np.array([distance, compliance])
+            rdivs = int(self.numPointsAveDatalineEdit.text())
+            zc_bounds = [float(self.zeroComplMinLineEdit.text()), float(self.zeroComplMaxLineEdit.text())]
 
-            distance, compliance = self.afmForceMapData.create_radial_plot_data(self.active_compliance_map, circle_center, scan_win_size, radius_um, zero_compl=zero_compliance)
+            if self.aveMethodComboBox.currentIndex() == 0:  # Polar
+                distance, compliance, zero_compliance = self.afmForceMapData.create_radial_ave_data_polar(self.active_compliance_map, circle_center, radius_um, scan_win_size, r_divs=rdivs, theta_divs=80, zero_compliance_bounds=zc_bounds)
+            else:  # Bin
+                distance_raw, compliance_raw = self.afmForceMapData.create_radial_data(self.active_compliance_map, circle_center, scan_win_size, radius_um, zero_compl=0)
+                distance, compliance, zero_compliance = self.afmForceMapData.create_radial_ave_data_bin(distance_raw, compliance_raw, r_divs=rdivs, zero_compliance_bounds=zc_bounds)
+
+            self.active_radial_compliance_ave_data = np.array([distance, compliance])
+            distance, compliance = self.afmForceMapData.create_radial_data(self.active_compliance_map, circle_center, scan_win_size, radius_um, zero_compl=zero_compliance)
             self.active_radial_compliance_data = np.array([distance, compliance])
-            
-            self.update_radial_compliance_plot(self.active_radial_compliance_data,self.active_radial_compliance_fit_data)
+
+            self.update_radial_compliance_plot(self.active_radial_compliance_data, self.active_radial_compliance_ave_data)
         except Exception as e:
-            print('Error creating fit data ...')
+            print('Error creating ave data ...')
             print(e)
 
     # def save_fit_data_button_clicked (self):
@@ -413,7 +444,7 @@ class DataProcessorGUI (QMainWindow):
     #         header3 = f'scan window size (um) = {self.scan_win_size}'
     #         header4 = 'r0/r,compliance'
     #         header  = f'{header1}\n{header2}\n{header3}\n{header4}'
-    #         np.savetxt(save_name, self.active_radial_compliance_fit_data.T, delimiter=',', header=header)
+    #         np.savetxt(save_name, self.active_radial_compliance_ave_data.T, delimiter=',', header=header)
     #     except Exception as e:
     #         print('Error saving data ...')
     #         print(e)
@@ -452,7 +483,7 @@ class DataProcessorGUI (QMainWindow):
             save_dict['scan window size (um)']                     = self.scan_win_size
             save_dict['tip spring constant']                       = float(self.kTiplineEdit.text())
             save_dict['radial compliance data (r/r0 and m/N)']     = self.active_radial_compliance_data
-            save_dict['radial compliance fit data (r/r0 and m/N)'] = self.active_radial_compliance_fit_data
+            save_dict['radial compliance ave data (r/r0 and m/N)'] = self.active_radial_compliance_ave_data
             save_dict['compliance map (m/N)']                     = self.afmForceMapData.processed_compliance_array
             np.savez_compressed(save_name, **save_dict)
         except Exception as e:
