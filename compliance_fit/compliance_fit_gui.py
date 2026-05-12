@@ -90,7 +90,7 @@ class ComplianceFitGUI (QMainWindow):
         self.fitDataButton.clicked.connect(self.fit_data_button_clicked)
         self.saveRadialSimButton.clicked.connect(self.save_radial_sim_button_clicked)
 
-        self.fitDataSourceCombo.addItem("Fit Data (averaged)")
+        self.fitDataSourceCombo.addItem("Ave Data")
         self.fitDataSourceCombo.addItem("Raw Data")
         self.fitDataSourceCombo.currentIndexChanged.connect(self.on_fit_data_source_changed)
             
