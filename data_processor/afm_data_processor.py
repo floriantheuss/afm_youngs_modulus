@@ -61,7 +61,7 @@ class AFMForceMapData:
 			x_ave[ii] = np.mean(x[mask])
 			y_ave[ii] = np.mean(y[mask])
 			size[ii] = len(x[mask])
-		print(np.mean(size))
+		# print(np.mean(size))
 		return x_ave, y_ave
 	
 	def median_filter (self, data, threshold=10, window=100):
@@ -171,7 +171,7 @@ class AFMForceMapData:
 		# x_approach = x_approach[y_approach_min_idx+40:y_approach_min_idx+100]
 		y_approach = y_approach[y_approach_min_idx:]
 		x_approach = x_approach[y_approach_min_idx:]
-		print(len(y_approach))
+		# print(len(y_approach))
 
 		y_retract_min_idx = np.argmin(y_retract)
 		y_retract = y_retract[:y_retract_min_idx]
@@ -235,10 +235,9 @@ class AFMForceMapData:
 				print('allowed values are: "linear"')
 				sys.exit()
 
-		if len(caution_list)>0:
-			print('caution')
 		self.raw_compliance_array = compliance_array
-		return compliance_array
+		return compliance_array, caution_list
+		
 	
 	def post_process_compliance_array (self, compliance_array, threshold_compliance=6):
 		"""

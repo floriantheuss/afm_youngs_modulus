@@ -1,8 +1,6 @@
 from PyQt5.QtWidgets import (QApplication,
                              QMainWindow,
-                             QPushButton,
                              QHBoxLayout,
-                             QVBoxLayout,
                              QWidget,
                              QFileDialog,
                              QTableWidget,
@@ -24,6 +22,7 @@ import json
 from numpy.polynomial import polynomial
 import platform
 from data_processor.afm_data_processor import AFMForceMapData
+from data_processor.caution_dialog import CautionDialog
 
 class DataProcessorGUI (QMainWindow):
     # the signal needs to be defined as a "class-level" attribute, so here, outside of __init__
@@ -271,7 +270,9 @@ class DataProcessorGUI (QMainWindow):
             retract_data  = self.afmForceMapData.retract_data
 
             k_tip = float(self.kTiplineEdit.text())
-            compliance_map = self.afmForceMapData.fit_map_compliance(x_index, approach_data, retract_data, k_tip=k_tip, fit_type='linear')
+            compliance_map, caution_list = self.afmForceMapData.fit_map_compliance(x_index, approach_data, retract_data, k_tip=k_tip, fit_type='linear')
+            if caution_list:
+                CautionDialog(caution_list, parent=self).exec_()
             
             self.updateForcePlot()
             self.update_compliance_map_plot(compliance_map)
