@@ -23,6 +23,7 @@ from numpy.polynomial import polynomial
 import platform
 from data_processor.afm_data_processor import AFMForceMapData
 from data_processor.caution_dialog import CautionDialog
+from data_processor.browse_info_dialog import BrowseInfoDialog
 
 class DataProcessorGUI (QMainWindow):
     # the signal needs to be defined as a "class-level" attribute, so here, outside of __init__
@@ -210,6 +211,7 @@ class DataProcessorGUI (QMainWindow):
         self.saveAllButton.clicked.connect(self.save_all_button_clicked)
             
     def browse_button_clicked (self, plot_dir=None):
+        BrowseInfoDialog(parent=self).exec_()
         self.fileList.clear()
         self.all_results = None
         try:
