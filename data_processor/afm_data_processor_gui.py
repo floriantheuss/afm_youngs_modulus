@@ -484,7 +484,10 @@ class DataProcessorGUI (QMainWindow):
             save_dict['tip spring constant']                       = float(self.kTiplineEdit.text())
             save_dict['radial compliance data (r/r0 and m/N)']     = self.active_radial_compliance_data
             save_dict['radial compliance ave data (r/r0 and m/N)'] = self.active_radial_compliance_ave_data
-            save_dict['compliance map (m/N)']                     = self.afmForceMapData.processed_compliance_array
+            compliance_to_save = self.afmForceMapData.processed_compliance_array
+            if compliance_to_save is None:
+                compliance_to_save = self.afmForceMapData.raw_compliance_array
+            save_dict['compliance map (m/N)']                     = compliance_to_save
             np.savez_compressed(save_name, **save_dict)
         except Exception as e:
             print('Error saving data ...')

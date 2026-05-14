@@ -201,6 +201,11 @@ class AFMForceMapData:
 		dimension = int(np.sqrt(len(x_index)))
 		# store compliance results in 2D array where each element corresponds to a pixel where the data was taken
 		compliance_array=np.zeros((dimension, dimension))
+
+		# catch instances where we have a slope greater than 1
+		# this may indicate something is wrong with the data
+		# for example the data for deflection may be in Volts rather than m and needs to be converted
+		caution_list = []
 		for xx, x_ind in enumerate(x_index):
 			x_approach, y_approach, x_retract, y_retract = self.prepare_individual_data_for_fit(approach_data[xx], retract_data[xx])
 			if fit_type=='linear':
@@ -220,6 +225,8 @@ class AFMForceMapData:
 	
 				# use average between apprach and retract
 				slope_ave = (fit_approach[1]+fit_retract[1])/2
+				if fit_approach[1]>1 or fit_retract[1]>1:
+					caution_list.append((x_ind[0], x_ind[1]))
 	
 				compliance_array[x_ind[0], x_ind[1]] = (1/slope_ave - 1)/k_tip
 
@@ -228,6 +235,8 @@ class AFMForceMapData:
 				print('allowed values are: "linear"')
 				sys.exit()
 
+		if len(caution_list)>0:
+			print('caution')
 		self.raw_compliance_array = compliance_array
 		return compliance_array
 	

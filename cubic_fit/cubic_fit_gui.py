@@ -102,7 +102,7 @@ class CubicFitGUI (QMainWindow):
             self.complianceMapPath, _ = self.fileDialog.getOpenFileName(self, "Open Compliance Map",self.dir,"All Files (*)", options=options)
             self.dir = self.separator.join(self.complianceMapPath.split(self.separator)[:-1])
             
-            data = np.load(self.complianceMapPath)
+            data = np.load(self.complianceMapPath, allow_pickle=True)
             self.compliance_map = data['compliance map (m/N)']
             self.radius         = data['radius (pixel)']
             self.circle_center  = data['circle center (pixels)']
@@ -274,8 +274,9 @@ class CubicFitGUI (QMainWindow):
             bounds = np.array([self.boundLine1.value(), self.boundLine2.value()])
             mask   = (x>=np.min(bounds)) & (x<=np.max(bounds))
             x, y   = x[mask], y[mask]
-            x      = x - np.min(x)
             y      = y - np.min(y)
+            x      = x - y
+            x      = x - np.min(x)
 
             # convert x, y to correct units
             y = self.k_tip*y
